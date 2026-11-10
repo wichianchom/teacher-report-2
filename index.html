@@ -1,0 +1,494 @@
+<!doctype html>
+<html lang="th" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>รายงานผลการปฏิบัติงาน - โรงเรียนวิเชียรชม</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    /* ใช้ฟอนต์ PSU Stidti ที่ติดตั้งในเครื่อง ถ้าเครื่องไหนไม่มีจะใช้ Prompt แทน
+       ถ้าตัวหนังสือ PSU Stidti เล็กไป ให้เพิ่ม size-adjust เป็น 115% หรือ 125% (มีผลเฉพาะ PSU Stidti) */
+    @font-face { font-family: 'PSU Stidti Local'; font-weight: 400; size-adjust: 100%;
+      src: local('PSU Stidti'), local('PSU-Stidti'), local('PSUStidti'), local('PSU Stidti Regular'), local('PSU-Stidti-Regular'); }
+    @font-face { font-family: 'PSU Stidti Local'; font-weight: 700; size-adjust: 100%;
+      src: local('PSU Stidti Bold'), local('PSU-Stidti Bold'), local('PSUStidti-Bold'), local('PSU-Stidti-Bold'); }
+    * { font-family: 'PSU Stidti Local', 'PSU Stidti', 'Prompt', sans-serif; }
+    .glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.3); }
+    .status-badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; white-space: nowrap; }
+    .status-pending { background: #FEF3C7; color: #92400E; }
+    .status-checked { background: #D1FAE5; color: #065F46; }
+    .status-resubmit { background: #FEE2E2; color: #991B1B; }
+    .tab-active { background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%); color: white; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4); }
+    .tab-inactive { background: rgba(255, 255, 255, 0.8); color: #64748B; }
+    @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-10px); } }
+    .floating { animation: float 3s ease-in-out infinite; }
+    .progress-track { height: 10px; border-radius: 999px; background: #E5E7EB; overflow: hidden; }
+    .progress-bar { height: 100%; width: 0%; border-radius: 999px; background: linear-gradient(90deg, #3B82F6, #2563EB); transition: width .25s ease; }
+    .progress-bar.done { background: linear-gradient(90deg, #10B981, #059669); }
+  </style>
+ </head>
+ <body class="h-full overflow-auto">
+  <div class="min-h-full w-full relative" style="background: linear-gradient(135deg, #E0F2FE 0%, #DBEAFE 50%, #EDE9FE 100%);">
+   <!-- พื้นหลังกราฟิก -->
+   <div class="absolute inset-0 overflow-hidden pointer-events-none">
+    <svg class="absolute top-10 left-10 w-24 h-24 opacity-20 floating" viewBox="0 0 100 100" style="animation-delay: 0s;"><rect x="10" y="30" width="80" height="50" rx="5" fill="#3B82F6" /> <rect x="15" y="35" width="70" height="40" rx="3" fill="#60A5FA" /></svg>
+    <svg class="absolute top-20 right-20 w-20 h-20 opacity-15 floating" viewBox="0 0 100 100" style="animation-delay: 1s;"><rect x="20" y="20" width="60" height="70" rx="3" fill="#10B981" /></svg>
+   </div>
+
+   <div class="relative z-10 p-4 md:p-6 lg:p-8">
+    <div class="text-center mb-6">
+     <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl mb-4 shadow-lg">
+      <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+     </div>
+     <h1 class="text-xl md:text-2xl font-bold text-gray-800 mb-1">รายงานผลการปฏิบัติงานของข้าราชการครูและบุคลากรทางการศึกษา</h1>
+     <p class="text-blue-600 font-medium text-lg">โรงเรียนวิเชียรชม</p>
+    </div>
+
+    <div class="flex justify-center mb-6 gap-2">
+     <button id="tab-submit" onclick="switchTab('submit')" class="tab-active px-6 py-3 rounded-xl font-medium transition-all flex items-center gap-2">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg> ส่งงาน
+     </button>
+     <button id="tab-status" onclick="switchTab('status')" class="tab-inactive px-6 py-3 rounded-xl font-medium transition-all flex items-center gap-2">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg> ตรวจสอบสถานะ
+     </button>
+    </div>
+
+    <!-- ฟอร์มส่งงาน -->
+    <div id="submit-section" class="max-w-2xl mx-auto">
+     <div class="glass-card rounded-2xl p-6 shadow-xl">
+      <form id="submitForm" onsubmit="handleSubmit(event)">
+       <div class="mb-4">
+        <label class="block text-gray-700 font-medium mb-2 text-sm"> <span class="text-red-500">*</span> ชื่อและนามสกุล ผู้ส่งงาน </label>
+        <input type="text" id="fullName" required maxlength="150" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 outline-none" placeholder="กรอกชื่อ-นามสกุล">
+       </div>
+       <div class="mb-4 flex gap-4">
+        <div class="w-1/2">
+            <label class="block text-gray-700 font-medium mb-2 text-sm"> <span class="text-red-500">*</span> วิทยฐานะ </label>
+            <select id="academicRank" required class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none bg-white">
+             <option value="">-- เลือกวิทยฐานะ --</option>
+             <option value="ครูผู้ช่วย">ครูผู้ช่วย</option><option value="ไม่มีวิทยฐานะ">ไม่มีวิทยฐานะ</option>
+             <option value="ครูชำนาญการ">ครูชำนาญการ</option><option value="ครูชำนาญการพิเศษ">ครูชำนาญการพิเศษ</option>
+             <option value="ครูเชี่ยวชาญ">ครูเชี่ยวชาญ</option><option value="ครูเชี่ยวชาญพิเศษ">ครูเชี่ยวชาญพิเศษ</option>
+            </select>
+        </div>
+        <div class="w-1/2">
+            <label class="block text-gray-700 font-medium mb-2 text-sm"> <span class="text-red-500">*</span> กลุ่มชั้น </label>
+            <select id="gradeLevel" required class="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none bg-white">
+             <option value="">-- เลือกกลุ่มชั้น --</option>
+             <option value="อนุบาล 3">อนุบาล 3</option><option value="ป.1">ป.1</option><option value="ป.2">ป.2</option>
+             <option value="ป.3">ป.3</option><option value="ป.4">ป.4</option><option value="ป.5">ป.5</option><option value="ป.6">ป.6</option>
+            </select>
+        </div>
+       </div>
+
+       <div class="mb-6 space-y-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
+        <h3 class="text-gray-800 font-semibold mb-2 border-b pb-2 flex items-center gap-2">เอกสารที่ต้องแนบ</h3>
+        <div>
+          <label class="block text-gray-700 font-medium mb-1 text-sm"><span class="text-red-500">*</span> 1. ผลการปฏิบัติงานตามข้อตกลง (PA)</label>
+          <input type="file" id="filePA" required accept=".pdf,application/pdf" class="w-full px-4 py-2 rounded-xl border bg-white text-sm">
+          <p class="text-red-500 text-xs mt-1 font-medium">* ไฟล์ PDF เท่านั้น ขนาดไม่เกิน 50 MB</p>
+        </div>
+       </div>
+
+       <button type="submit" id="submitBtn" class="w-full py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50 flex justify-center gap-2">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg> อัปโหลดและบันทึกข้อมูล
+       </button>
+      </form>
+     </div>
+    </div>
+
+    <!-- ส่วนแสดงสถานะ -->
+    <div id="status-section" class="max-w-5xl mx-auto hidden">
+     <div class="glass-card rounded-2xl p-6 shadow-xl">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-3">
+       <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">สถานะการส่งงาน</h2>
+       <div class="flex items-center gap-2">
+         <button onclick="promptAdminLogin()" id="adminBtn" class="px-3 py-2 bg-gray-100 text-gray-600 font-medium rounded-xl text-sm border">🔒 แอดมิน</button>
+         <button onclick="fetchData()" id="refreshBtn" class="px-4 py-2 bg-gradient-to-r from-emerald-500 to-green-600 text-white font-medium rounded-xl text-sm shadow-md disabled:opacity-60">รีเฟรช</button>
+       </div>
+      </div>
+      <div class="mb-4"><input type="text" id="searchInput" oninput="renderTable()" class="w-full px-4 py-3 rounded-xl border outline-none" placeholder="🔍 ค้นหาชื่อ หรือกลุ่มชั้น..."></div>
+      <div class="overflow-x-auto pb-4">
+       <table class="w-full min-w-[700px]" id="dataTable">
+        <thead id="tableHead"></thead>
+        <tbody id="tableBody" class="divide-y divide-gray-100"></tbody>
+       </table>
+      </div>
+     </div>
+    </div>
+
+   </div>
+  </div>
+
+  <script>
+    // ====================================================
+    // ตั้งค่า: นำ Web App URL ของ Google Apps Script (ลงท้ายด้วย /exec) มาใส่ตรงนี้
+    const CONFIG = {
+      GAS_URL: 'https://script.google.com/macros/s/AKfycbxZwII2VJ_MDFsP_qgScEPGOkubOO_9guA0o6vLnPRHHiYbikbjmN6bI5kLUFjkmdJzGg/exec',
+      APP_ID: 'teacher-report-2',        // ใช้แยกข้อมูลที่จำในเบราว์เซอร์ ไม่ให้ปนกับระบบเดิม
+      CHUNK_SIZE: 4 * 1024 * 1024,       // ขนาดชิ้นสำหรับทางสำรอง (ต้องเป็นผลคูณของ 256 KB)
+      MAX_TOTAL: 50 * 1024 * 1024,
+    };
+    // ====================================================
+
+    const FILE_INPUTS = [
+      { field: 'PA', input: 'filePA', label: 'ผลการปฏิบัติงานตามข้อตกลง (PA)' },
+    ];
+    const STATUS_CACHE_KEY = CONFIG.APP_ID + ':status';
+
+    let publicData = [];
+    let adminData = null;      // มีค่าเมื่ออยู่ในโหมดแอดมิน (ไม่เก็บลงเครื่อง)
+    let adminPassword = '';
+    let uploading = false;
+    let lastFetch = 0;
+    let fetchPromise = null;
+
+    // ---------- ตัวช่วยทั่วไป ----------
+    const $ = id => document.getElementById(id);
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
+    const isConfigured = () => /^https:\/\/script\.google\.com\/.+\/exec$/.test(CONFIG.GAS_URL);
+    const extOf = name => ((String(name).toLowerCase().match(/\.([a-z0-9]+)$/) || [])[1] || '');
+    const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const safeUrl = u => /^https?:\/\//i.test(String(u || '')) ? esc(u) : '#';
+    const toast = (title, icon = 'success') => Swal.fire({ toast: true, position: 'top-end', icon, title, showConfirmButton: false, timer: 1800 });
+
+    // ---------- เรียก Apps Script ----------
+    async function api(action, data) {
+      let json;
+      try {
+        const res = await fetch(CONFIG.GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // text/plain เพื่อเลี่ยง CORS preflight
+          body: JSON.stringify(Object.assign({ action }, data || {})),
+        });
+        json = await res.json();
+      } catch (e) {
+        const err = new Error('network'); err.network = true; throw err;
+      }
+      if (!json.ok) {
+        const err = new Error(json.message); err.userMessage = json.message; err.code = json.code; throw err;
+      }
+      return json;
+    }
+
+    async function withRetry(fn, tries = 3) {
+      for (let i = 1; ; i++) {
+        try { return await fn(); }
+        catch (e) { if (!e.network || i >= tries) throw e; await sleep(1000 * i); }
+      }
+    }
+
+    // ---------- สลับแท็บ ----------
+    function switchTab(tab) {
+      $('submit-section').classList.toggle('hidden', tab !== 'submit');
+      $('status-section').classList.toggle('hidden', tab !== 'status');
+      const base = 'px-6 py-3 rounded-xl font-medium transition-all flex items-center gap-2';
+      $('tab-submit').className = (tab === 'submit' ? 'tab-active ' : 'tab-inactive ') + base;
+      $('tab-status').className = (tab === 'status' ? 'tab-active ' : 'tab-inactive ') + base;
+      if (tab === 'status') {
+        renderTable();
+        if (Date.now() - lastFetch > 30000) fetchData();
+      }
+    }
+
+    // ---------- อัปโหลด ----------
+    async function handleSubmit(event) {
+      event.preventDefault();
+      if (uploading) return;
+      if (!isConfigured()) return Swal.fire('ยังไม่ได้ตั้งค่า', 'ยังไม่ได้ใส่ GAS_URL ในไฟล์ index.html', 'warning');
+
+      const fullName = $('fullName').value.trim();
+      const academicRank = $('academicRank').value;
+      const gradeLevel = $('gradeLevel').value;
+      const pa = $('filePA').files[0];
+      if (!fullName || !academicRank || !gradeLevel || !pa) {
+        return Swal.fire('แจ้งเตือน', 'กรุณากรอกข้อมูลและแนบไฟล์ให้ครบถ้วน', 'warning');
+      }
+      if (extOf(pa.name) !== 'pdf' || !(await isPdf(pa))) {
+        return Swal.fire('ชนิดไฟล์ไม่รองรับ', 'กรุณาแนบไฟล์ PDF เท่านั้น', 'warning');
+      }
+      if (pa.size > CONFIG.MAX_TOTAL) {
+        return Swal.fire('ไฟล์ขนาดใหญ่เกินไป', `ไฟล์ต้องไม่เกิน 50 MB (ไฟล์นี้ ${(pa.size / 1048576).toFixed(1)} MB)`, 'error');
+      }
+      const files = { PA: pa };
+
+      uploading = true;
+      $('submitBtn').disabled = true;
+      openProgress();
+      try {
+        const s = await api('start', {
+          fullName, academicRank, gradeLevel, origin: location.origin,
+          files: FILE_INPUTS.map(f => ({ field: f.field, name: files[f.field].name, size: files[f.field].size })),
+        });
+
+        setStep('กำลังอัปโหลดไฟล์...');
+        const fileIds = {};
+        await Promise.all(s.uploads.map(async u => {
+          fileIds[u.field] = await uploadFile(s.token, u, files[u.field], frac => setProgress(u.field, frac));
+          setProgress(u.field, 1, true);
+        }));
+
+        setStep('กำลังบันทึกข้อมูล...');
+        const r = await withRetry(() => api('finish', { token: s.token, fileIds }), 4);
+
+        clearStatusCache();
+        await Swal.fire({
+          icon: 'success', title: 'ส่งงานสำเร็จ!', confirmButtonText: 'ตกลง',
+          html: `บันทึกงานของ <b>${esc(fullName)}</b> เรียบร้อยแล้ว<br><span class="text-sm text-gray-500">${esc(r.submitDate)}</span>`,
+        });
+        $('submitForm').reset();
+      } catch (e) {
+        console.error(e);
+        Swal.fire('ส่งงานไม่สำเร็จ', e.userMessage || 'การเชื่อมต่อมีปัญหา กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองใหม่อีกครั้ง', 'error');
+      } finally {
+        uploading = false;
+        $('submitBtn').disabled = false;
+      }
+    }
+
+    // ส่งไฟล์ตรงเข้า Google Drive ก่อน (เร็วสุด) ถ้าไม่ได้ จะส่งเป็นชิ้นผ่าน Apps Script แทนอัตโนมัติ
+    async function uploadFile(token, u, file, onProgress) {
+      if (u.direct) {
+        try { return await uploadDirect(u.url, file, onProgress); }
+        catch (e) { console.warn('อัปโหลดตรงไม่สำเร็จ เปลี่ยนไปใช้ทางสำรอง:', e.message); }
+      }
+      return uploadViaScript(token, u.field, file, onProgress);
+    }
+
+    function uploadDirect(url, file, onProgress) {
+      return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('PUT', url);
+        xhr.upload.onprogress = e => { if (e.lengthComputable) onProgress(e.loaded / e.total); };
+        xhr.onload = () => {
+          if (xhr.status === 200 || xhr.status === 201) {
+            try { const id = JSON.parse(xhr.responseText).id; if (id) return resolve(id); } catch (e) { /* ตกไปด้านล่าง */ }
+          }
+          reject(new Error('direct HTTP ' + xhr.status));
+        };
+        xhr.onerror = () => reject(new Error('direct network/CORS'));
+        xhr.send(file);
+      });
+    }
+
+    async function uploadViaScript(token, field, file, onProgress) {
+      let r = await withRetry(() => api('probe', { token, field }));
+      let stalls = 0;
+      while (!r.done) {
+        const offset = r.next;
+        onProgress(offset / file.size);
+        const end = Math.min(offset + CONFIG.CHUNK_SIZE, file.size);
+        const data = await blobToBase64(file.slice(offset, end));
+        let next;
+        try {
+          next = await api('chunk', { token, field, offset, data });
+        } catch (e) {
+          if (!e.network) throw e;
+          await sleep(1500);
+          next = await withRetry(() => api('probe', { token, field })); // ถามว่าถึงไหนแล้ว แล้วส่งต่อ
+        }
+        stalls = (next.done || next.next > offset) ? 0 : stalls + 1;
+        if (stalls >= 3) throw new Error('upload stalled');
+        r = next;
+      }
+      return r.fileId;
+    }
+
+    // ตรวจว่าเป็น PDF จริง (ขึ้นต้นด้วย %PDF-) ไม่ใช่แค่เปลี่ยนนามสกุล
+    async function isPdf(file) {
+      try { return (await file.slice(0, 1024).text()).includes('%PDF-'); } catch (e) { return true; }
+    }
+
+    function blobToBase64(blob) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result).split(',')[1] || '');
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(blob);
+      });
+    }
+
+    function openProgress() {
+      Swal.fire({
+        title: 'กำลังส่งงาน',
+        html: `<p id="up-step" class="text-sm text-gray-600 mb-4">กำลังเตรียมการอัปโหลด...</p>` +
+          FILE_INPUTS.map(f => `
+            <div class="text-left mb-3">
+              <div class="flex justify-between text-xs text-gray-600 mb-1"><span>${f.label}</span><span id="up-pct-${f.field}">0%</span></div>
+              <div class="progress-track"><div id="up-bar-${f.field}" class="progress-bar"></div></div>
+            </div>`).join('') +
+          `<p class="text-xs text-gray-400 mt-3">กรุณาอย่าปิดหน้านี้จนกว่าจะเสร็จ</p>`,
+        allowOutsideClick: false, allowEscapeKey: false, showConfirmButton: false,
+      });
+    }
+    function setStep(text) { const el = $('up-step'); if (el) el.textContent = text; }
+    function setProgress(field, frac, done) {
+      const pct = Math.max(0, Math.min(100, Math.round(frac * 100)));
+      const bar = $('up-bar-' + field), label = $('up-pct-' + field);
+      if (bar) { bar.style.width = pct + '%'; bar.classList.toggle('done', !!done); }
+      if (label) label.textContent = done ? 'เสร็จแล้ว ✓' : pct + '%';
+    }
+
+    window.addEventListener('beforeunload', e => { if (uploading) { e.preventDefault(); e.returnValue = ''; } });
+
+    // ---------- ตารางสถานะ ----------
+    function loadStatusCache() {
+      try { const raw = localStorage.getItem(STATUS_CACHE_KEY); if (raw) publicData = JSON.parse(raw) || []; } catch (e) { /* ข้าม */ }
+    }
+    function saveStatusCache() {
+      try { localStorage.setItem(STATUS_CACHE_KEY, JSON.stringify(publicData)); } catch (e) { /* ข้าม */ }
+    }
+    function clearStatusCache() {
+      try { localStorage.removeItem(STATUS_CACHE_KEY); } catch (e) { /* ข้าม */ }
+      lastFetch = 0;
+    }
+
+    function fetchData() {
+      if (!isConfigured()) { renderMessage('ยังไม่ได้ตั้งค่า GAS_URL ในไฟล์ index.html'); return Promise.resolve(); }
+      if (fetchPromise) return fetchPromise;
+      const hadRows = (adminData || publicData).length > 0;
+      if (!hadRows) renderMessage('กำลังดึงข้อมูล...');
+      $('refreshBtn').disabled = true;
+      $('refreshBtn').textContent = 'กำลังโหลด...';
+      fetchPromise = (async () => {
+        try {
+          if (adminData) {
+            adminData = (await withRetry(() => api('adminList', { password: adminPassword }))).data;
+          } else {
+            publicData = (await withRetry(() => api('list'))).data;
+            saveStatusCache();
+          }
+          lastFetch = Date.now();
+          renderTable();
+        } catch (e) {
+          if (e.code === 'BAD_PASSWORD') { logoutAdmin(); Swal.fire('ออกจากระบบแล้ว', 'รหัสผู้ตรวจถูกเปลี่ยน กรุณาเข้าสู่ระบบใหม่', 'info'); }
+          else if (hadRows) toast('อัปเดตข้อมูลไม่สำเร็จ กำลังแสดงข้อมูลล่าสุดที่มี', 'warning');
+          else renderMessage(e.userMessage || 'ดึงข้อมูลไม่สำเร็จ กรุณากดรีเฟรชอีกครั้ง', true);
+        } finally {
+          $('refreshBtn').disabled = false;
+          $('refreshBtn').textContent = 'รีเฟรช';
+          fetchPromise = null;
+        }
+      })();
+      return fetchPromise;
+    }
+
+    async function promptAdminLogin() {
+      if (adminData) { logoutAdmin(); toast('ออกจากระบบ'); return; }
+      const { isConfirmed } = await Swal.fire({
+        title: 'รหัสผ่านผู้ตรวจ', input: 'password', inputAttributes: { autocomplete: 'current-password' },
+        showCancelButton: true, confirmButtonText: 'เข้าสู่ระบบ', cancelButtonText: 'ยกเลิก',
+        showLoaderOnConfirm: true, allowOutsideClick: () => !Swal.isLoading(),
+        preConfirm: async pw => {
+          if (!pw) { Swal.showValidationMessage('กรุณากรอกรหัสผ่าน'); return false; }
+          try {
+            adminData = (await api('adminList', { password: pw })).data;
+            adminPassword = pw;
+            lastFetch = Date.now();
+            return true;
+          } catch (e) {
+            Swal.showValidationMessage(e.userMessage || 'เชื่อมต่อไม่สำเร็จ กรุณาลองใหม่');
+            return false;
+          }
+        },
+      });
+      if (isConfirmed && adminData) {
+        $('adminBtn').textContent = '🔓 ออกจากระบบ';
+        renderTable();
+        toast('เข้าสู่ระบบผู้ตรวจแล้ว');
+      }
+    }
+
+    function logoutAdmin() {
+      adminData = null;
+      adminPassword = '';
+      $('adminBtn').textContent = '🔒 แอดมิน';
+      renderTable();
+    }
+
+    function renderMessage(text, isError) {
+      $('tableHead').innerHTML = '';
+      $('tableBody').innerHTML = `<tr><td colspan="7" class="text-center py-10 ${isError ? 'text-red-500' : 'text-gray-500'}">${esc(text)}</td></tr>`;
+    }
+
+    function renderTable() {
+      const isAdmin = !!adminData;
+      const source = isAdmin ? adminData : publicData;
+      const q = $('searchInput').value.trim().toLowerCase();
+      const data = q ? source.filter(it =>
+        String(it.fullName || '').toLowerCase().includes(q) || String(it.gradeLevel || '').toLowerCase().includes(q)) : source;
+      const th = t => `<th class="px-4 py-3 text-left text-xs text-gray-600 whitespace-nowrap">${t}</th>`;
+
+      $('tableHead').innerHTML = `<tr class="bg-gray-50">${th('ลำดับ')}${th('ชื่อ-นามสกุล')}${th('กลุ่มชั้น')}${th('วันที่ส่ง')}` +
+        (isAdmin ? th('ไฟล์ PA') : '') + th('สถานะ') + (isAdmin ? th('คะแนน / จัดการ') : '') + `</tr>`;
+
+      if (!data.length) {
+        $('tableBody').innerHTML = `<tr><td colspan="7" class="px-4 py-12 text-center text-gray-500">${source.length ? 'ไม่พบข้อมูลที่ค้นหา' : (lastFetch ? 'ยังไม่มีผู้ส่งงาน' : 'กำลังดึงข้อมูล...')}</td></tr>`;
+        return;
+      }
+
+      $('tableBody').innerHTML = data.map((item, index) => {
+        const status = item.status || 'รอตรวจ';
+        const cls = status === 'ตรวจแล้ว' ? 'status-checked' : (status === 'ส่งใหม่' ? 'status-resubmit' : 'status-pending');
+        let statusCell = `<span class="status-badge ${cls}">${esc(status)}</span>`;
+        let linksCell = '', adminCell = '';
+
+        if (isAdmin) {
+          statusCell = `<select data-role="status" class="px-2 py-1 border text-sm rounded">` +
+            ['รอตรวจ', 'ตรวจแล้ว', 'ส่งใหม่'].map(s => `<option value="${s}" ${s === status ? 'selected' : ''}>${s}</option>`).join('') + `</select>`;
+          const pa = (item.files || {}).PA;
+          linksCell = `<td class="px-4 py-3 text-sm whitespace-nowrap">` + (pa
+            ? `<a href="${safeUrl(pa)}" target="_blank" rel="noopener" class="text-blue-500 hover:underline">📄 เปิดไฟล์ PA</a>`
+            : '<span class="text-gray-400">-</span>') + `</td>`;
+          adminCell = `<td class="px-4 py-3"><div class="flex gap-2 items-center">
+            <input data-role="score" type="text" maxlength="20" value="${esc(item.score)}" class="w-16 px-2 py-1 border text-sm text-center rounded" placeholder="คะแนน">
+            <button data-save="${esc(item.id)}" class="px-3 py-1 bg-blue-500 text-white rounded text-xs whitespace-nowrap disabled:opacity-60">บันทึก</button></div></td>`;
+        }
+
+        return `<tr class="hover:bg-gray-50 border-b">
+          <td class="px-4 py-3 text-sm">${data.length - index}</td>
+          <td class="px-4 py-3 text-sm"><div class="font-medium">${esc(item.fullName)}</div><div class="text-xs text-gray-500">${esc(item.academicRank)}</div></td>
+          <td class="px-4 py-3 text-sm">${esc(item.gradeLevel)}</td>
+          <td class="px-4 py-3 text-sm">${esc(item.submitDate)}</td>
+          ${linksCell}
+          <td class="px-4 py-3">${statusCell}</td>
+          ${adminCell}
+        </tr>`;
+      }).join('');
+    }
+
+    // ปุ่ม "บันทึก" ของผู้ตรวจ
+    $('tableBody').addEventListener('click', async e => {
+      const btn = e.target.closest('[data-save]');
+      if (!btn || !adminData) return;
+      const id = btn.dataset.save;
+      const row = btn.closest('tr');
+      const status = row.querySelector('[data-role="status"]').value;
+      const score = row.querySelector('[data-role="score"]').value.trim();
+      btn.disabled = true;
+      btn.textContent = 'กำลังบันทึก...';
+      try {
+        await api('update', { password: adminPassword, id, status, score });
+        const item = adminData.find(x => x.id === id);
+        if (item) { item.status = status; item.score = score; }
+        const pub = publicData.find(x => x.id === id);
+        if (pub) { pub.status = status; saveStatusCache(); }
+        btn.textContent = 'บันทึกแล้ว ✓';
+        setTimeout(() => { btn.textContent = 'บันทึก'; btn.disabled = false; }, 1500);
+      } catch (err) {
+        btn.textContent = 'บันทึก';
+        btn.disabled = false;
+        if (err.code === 'BAD_PASSWORD') logoutAdmin();
+        Swal.fire('ผิดพลาด', err.userMessage || 'ไม่สามารถบันทึกได้ กรุณาลองใหม่', 'error');
+      }
+    });
+
+    // เริ่มต้น: แสดงข้อมูลที่จำไว้ทันที แล้วโหลดข้อมูลใหม่ล่วงหน้าแบบเงียบๆ
+    loadStatusCache();
+    if (isConfigured()) setTimeout(() => { if (!uploading) fetchData(); }, 1500);
+  </script>
+ </body>
+</html>
